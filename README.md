@@ -73,4 +73,14 @@
 gradle build
 ```
 
+## GitHub Actions
+
+- 推送到 `main` 会自动构建和测试，并在对应的 Actions 运行中提供可下载的 `mc-piano-test-<commit>` JAR 工件。
+- 推送版本标签会自动创建正式 Release、上传非 sources 的 Mod JAR，并让 GitHub 自动生成 Release Notes。例如：
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 Minecraft 26.1 起已经反混淆，因此 26.2 项目不应配置 Yarn 或 Mojang mappings；本工程已采用该模式。
