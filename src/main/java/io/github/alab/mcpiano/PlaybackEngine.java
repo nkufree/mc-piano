@@ -37,6 +37,7 @@ public final class PlaybackEngine {
     public void setWeakestVelocityPercent(double percent) { soundFont.setWeakestVelocityPercent(percent); }
     public double weakestVelocityPercent() { return soundFont.weakestVelocityPercent(); }
     public float intensity(int note) { return note >= 0 && note < keyIntensity.length ? keyIntensity[note] : 0; }
+    public boolean isKeyHeld(int note) { return note >= 0 && note < heldKeyCounts.length && heldKeyCounts[note] > 0; }
     public float intensity(int note, int channel) {
         return note >= 0 && note < 128 && channel >= 0 && channel < 16 ? channelKeyIntensity[channel][note] : 0;
     }

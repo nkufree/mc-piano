@@ -68,13 +68,19 @@ public final class PianoRenderer {
             float intensity = engine.intensity(key.midiNote());
             double trackX = origin.getX() + key.x();
             int channel = voices.strongestChannel(engine, key.midiNote());
-            BlockState track = intensity > 0.05f
-                    ? highlightCore(key.black(), intensity, channel, voices)
-                    : (key.black() ? Blocks.STAINED_GLASS.black().defaultBlockState()
-                    : Blocks.STAINED_GLASS.gray().defaultBlockState());
+            BlockState track = key.black() ? Blocks.STAINED_GLASS.black().defaultBlockState()
+                    : Blocks.STAINED_GLASS.gray().defaultBlockState();
             showBox(client, wanted, "track:" + key.midiNote(), track,
                     trackX + TRACK_INSET, floor, noteZ + 0.985,
-                    key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.025, intensity > 0.65f);
+                    key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.025, false);
+            // Keep the board itself immutable. The coloured overlay is a short-lived
+            // separate display, so a released key cannot leave stale coloured glass.
+            if (engine.isKeyHeld(key.midiNote())) {
+                showBox(client, wanted, "track:" + key.midiNote() + ":active",
+                        highlightCore(key.black(), intensity, channel, voices),
+                        trackX + TRACK_INSET, floor, noteZ + 1.012,
+                        key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.020, true);
+            }
         }
 
         for (int index = 0; index < song.notes().size(); index++) {

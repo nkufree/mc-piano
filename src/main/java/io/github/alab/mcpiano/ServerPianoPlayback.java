@@ -162,11 +162,16 @@ public final class ServerPianoPlayback {
         for (PianoLayout.Key key : PianoLayout.keys()) {
             float intensity = keyIntensity[key.midiNote()];
             int channel = voices.strongestChannel(channelIntensity, key.midiNote());
-            BlockState track = intensity > 0.05f ? highlightCore(key.black(), intensity, channel)
-                    : (key.black() ? Blocks.STAINED_GLASS.black() : Blocks.STAINED_GLASS.gray()).defaultBlockState();
+            BlockState track = (key.black() ? Blocks.STAINED_GLASS.black() : Blocks.STAINED_GLASS.gray()).defaultBlockState();
             showBox(wanted, "track:" + key.midiNote(), track,
                     origin.getX() + key.x() + TRACK_INSET, floor, noteZ + 0.985,
-                    key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.025, intensity > 0.65f);
+                    key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.025, false);
+            if (isKeyHeld(key.midiNote())) {
+                showBox(wanted, "track:" + key.midiNote() + ":active",
+                        highlightCore(key.black(), intensity, channel),
+                        origin.getX() + key.x() + TRACK_INSET, floor, noteZ + 1.012,
+                        key.width() - TRACK_INSET * 2.0, ceiling - floor, 0.020, true);
+            }
         }
 
         for (int index = 0; index < song.notes().size(); index++) {
@@ -263,6 +268,13 @@ public final class ServerPianoPlayback {
     }
 
     private static boolean inRange(int note) { return note >= PianoLayout.LOWEST_NOTE && note <= PianoLayout.HIGHEST_NOTE; }
+
+    private boolean isKeyHeld(int note) {
+        for (int channel = 0; channel < heldChannels.length; channel++) {
+            if (heldChannels[channel][note] > 0) return true;
+        }
+        return false;
+    }
 
     private BlockState highlightCore(boolean black, float intensity, int channel) {
         return voices.multipleVoices() ? noteStyle(black, channel).outerEdge() : activeCore(black, intensity);
