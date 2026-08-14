@@ -58,7 +58,20 @@ public final class MidiParser {
             double time = tempoMap.secondsAt(event.tick);
             if (event.kind == Kind.ON) {
                 noteChannels.add(event.channel);
-                held.computeIfAbsent(event.channel * 128 + event.note, ignored -> new ArrayDeque<>()).addLast(event);
+                ArrayDeque<RawEvent> starts = held.computeIfAbsent(event.channel * 128 + event.note,
+                        ignored -> new ArrayDeque<>());
+                if (!starts.isEmpty()) {
+                    // Some exported piano MIDI files retrigger a key with a
+                    // second Note On but omit the old Note Off.  MIDI devices
+                    // treat that as a retrigger; close the prior voice here
+                    // instead of leaving a falling block until song end.
+                    RawEvent previous = starts.removeLast();
+                    notes.add(new MidiSong.FallingNote(previous.note, tempoMap.secondsAt(previous.tick), time,
+                            previous.value, previous.channel));
+                    events.add(new MidiSong.TimelineEvent(time, MidiSong.TimelineEvent.Type.NOTE_OFF,
+                            previous.note, 0, previous.channel, 0));
+                }
+                starts.addLast(event);
                 events.add(new MidiSong.TimelineEvent(time, MidiSong.TimelineEvent.Type.NOTE_ON,
                         event.note, event.value, event.channel, event.value));
             } else if (event.kind == Kind.OFF) {

@@ -183,6 +183,10 @@ public final class PianoRenderer {
         if (display == null || display.isRemoved()) {
             display = new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, client.level);
             display.setId(nextEntityId--);
+            DisplayAccessor accessor = (DisplayAccessor) display;
+            accessor.mcpiano$setTransformationInterpolationDuration(0);
+            accessor.mcpiano$setTransformationInterpolationDelay(0);
+            accessor.mcpiano$setPosRotInterpolationDuration(0);
             client.level.addEntity(display);
             DISPLAYS.put(key, display);
         }

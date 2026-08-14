@@ -14,4 +14,13 @@ public interface DisplayAccessor {
 
     @Invoker("setBrightnessOverride")
     void mcpiano$setBrightnessOverride(Brightness brightness);
+
+    @Invoker("setTransformationInterpolationDuration")
+    void mcpiano$setTransformationInterpolationDuration(int ticks);
+
+    @Invoker("setTransformationInterpolationDelay")
+    void mcpiano$setTransformationInterpolationDelay(int ticks);
+
+    @Invoker("setPosRotInterpolationDuration")
+    void mcpiano$setPosRotInterpolationDuration(int ticks);
 }

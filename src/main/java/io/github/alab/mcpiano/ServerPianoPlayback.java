@@ -208,6 +208,13 @@ public final class ServerPianoPlayback {
         if (display == null || display.isRemoved()) {
             display = new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, level);
             display.addTag(RUNTIME_TAG);
+            DisplayAccessor accessor = (DisplayAccessor) display;
+            // Server updates a falling note every tick.  Explicit zero-duration
+            // interpolation makes the shortened scale and position arrive in
+            // the same tick for both a live client and Replay Mod playback.
+            accessor.mcpiano$setTransformationInterpolationDuration(0);
+            accessor.mcpiano$setTransformationInterpolationDelay(0);
+            accessor.mcpiano$setPosRotInterpolationDuration(0);
             level.addFreshEntity(display);
             displays.put(key, display);
         }
