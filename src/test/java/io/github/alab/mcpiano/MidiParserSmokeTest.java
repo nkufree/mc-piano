@@ -9,6 +9,7 @@ public final class MidiParserSmokeTest {
     public static void main(String[] args) throws Exception {
         autoPedalRegression();
         retriggerRegression();
+        overlappingSameTrackVoicesRegression();
         independentTrackVoicesRegression();
         if (PianoLayout.keys().size() != 88 || PianoLayout.key(21).x() != 102
                 || PianoLayout.key(108).x() != 0) {
@@ -87,6 +88,30 @@ public final class MidiParserSmokeTest {
         double longest = generated.notes().stream().mapToDouble(MidiSong.FallingNote::endSeconds).max().orElseThrow();
         if (Math.abs(shortest - 0.5) > 0.001 || Math.abs(longest - 1.0) > 0.001) {
             throw new AssertionError("Same-pitch track voices did not retain their distinct durations");
+        }
+    }
+
+    private static void overlappingSameTrackVoicesRegression() throws Exception {
+        // One track and one channel: C4 begins at time 0 for two beats, then a
+        // second C4 voice begins half a beat later and ends first. The old eager
+        // retrigger workaround incorrectly shortened the long voice to 0.25 s.
+        byte[] midi = {
+                'M', 'T', 'h', 'd', 0, 0, 0, 6, 0, 0, 0, 1, 1, (byte) 0xE0,
+                'M', 'T', 'r', 'k', 0, 0, 0, 23,
+                0, (byte) 0x90, 60, 64,
+                (byte) 0x81, 0x70, (byte) 0x90, 60, 64,
+                (byte) 0x81, 0x70, (byte) 0x80, 60, 0,
+                (byte) 0x83, 0x60, (byte) 0x80, 60, 0,
+                0, (byte) 0xFF, 0x2F, 0
+        };
+        MidiSong generated = MidiParser.parse(midi);
+        if (generated.notes().size() != 2) {
+            throw new AssertionError("Expected two overlapping same-track notes, got " + generated.notes().size());
+        }
+        double shortest = generated.notes().stream().mapToDouble(MidiSong.FallingNote::endSeconds).min().orElseThrow();
+        double longest = generated.notes().stream().mapToDouble(MidiSong.FallingNote::endSeconds).max().orElseThrow();
+        if (Math.abs(shortest - 0.5) > 0.001 || Math.abs(longest - 1.0) > 0.001) {
+            throw new AssertionError("Overlapping same-track voices did not retain their distinct durations");
         }
     }
 }

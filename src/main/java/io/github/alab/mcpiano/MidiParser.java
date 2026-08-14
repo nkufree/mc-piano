@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,7 @@ public final class MidiParser {
         List<MidiSong.TimelineEvent> events = new ArrayList<>();
         List<MidiSong.FallingNote> notes = new ArrayList<>();
         Map<Integer, ArrayDeque<RawEvent>> held = new HashMap<>();
+        Map<RawEvent, Double> missingOffFallbacks = new IdentityHashMap<>();
         Set<Integer> noteChannels = new TreeSet<>();
         long finalTick = 0;
         for (RawEvent event : raw) {
@@ -60,17 +62,11 @@ public final class MidiParser {
                 noteChannels.add(event.channel);
                 ArrayDeque<RawEvent> starts = held.computeIfAbsent(heldKey(event),
                         ignored -> new ArrayDeque<>());
-                if (!starts.isEmpty()) {
-                    // Some exported piano MIDI files retrigger a key with a
-                    // second Note On but omit the old Note Off.  MIDI devices
-                    // treat that as a retrigger; close the prior voice here
-                    // instead of leaving a falling block until song end.
-                    RawEvent previous = starts.removeLast();
-                    notes.add(new MidiSong.FallingNote(previous.note, tempoMap.secondsAt(previous.tick), time,
-                            previous.value, previous.channel));
-                    events.add(new MidiSong.TimelineEvent(time, MidiSong.TimelineEvent.Type.NOTE_OFF,
-                            previous.note, 0, previous.channel, 0));
-                }
+                // A notation export can contain genuinely overlapping same-key
+                // voices. Do not treat a second Note On as an immediate retrigger.
+                // If one of these starts ultimately has no Note Off, its fallback
+                // end is applied only after all real Note Off events are known.
+                for (RawEvent pending : starts) missingOffFallbacks.putIfAbsent(pending, time);
                 starts.addLast(event);
                 events.add(new MidiSong.TimelineEvent(time, MidiSong.TimelineEvent.Type.NOTE_ON,
                         event.note, event.value, event.channel, event.value));
@@ -95,8 +91,11 @@ public final class MidiParser {
         for (ArrayDeque<RawEvent> starts : held.values()) {
             while (!starts.isEmpty()) {
                 RawEvent start = starts.removeLast();
-                notes.add(new MidiSong.FallingNote(start.note, tempoMap.secondsAt(start.tick), duration,
+                double end = missingOffFallbacks.getOrDefault(start, duration);
+                notes.add(new MidiSong.FallingNote(start.note, tempoMap.secondsAt(start.tick), end,
                         start.value, start.channel));
+                events.add(new MidiSong.TimelineEvent(end, MidiSong.TimelineEvent.Type.NOTE_OFF,
+                        start.note, 0, start.channel, 0));
             }
         }
         notes.removeIf(note -> note.note() < PianoLayout.LOWEST_NOTE || note.note() > PianoLayout.HIGHEST_NOTE
