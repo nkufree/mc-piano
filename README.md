@@ -12,11 +12,12 @@
 
 ```text
 /piano build
-/pianoviz load [Animenz]Tori_no_Uta.mid
-/pianoviz play
+/piano play [Animenz]Tori_no_Uta.mid
 ```
 
 `build` 从当前位置向 X 正方向建立 88 键钢琴，键盘前方是 Z 负方向；它会自动记住钢琴原点，之后的 `/pianoviz play` 会在这架钢琴上显示下落音符与按键高亮。也可显式覆盖原点：`/pianoviz play <x> <y> <z>`。客户端控制命令用 `pianoviz` 前缀，避免和服务器的 `/piano build` 冲突。
+
+需要使用 Replay Mod 录制时，请使用服务端命令 `/piano play <文件名>`。下落音符、键盘高亮和踏板会作为真实 `BlockDisplay` 实体同步，因此会被回放记录。`/pianoviz play` 仍用于本地 SF2 声音与即时预览，不会被 Replay Mod 录制。
 
 可用客户端命令：
 
@@ -34,6 +35,15 @@
 /pianoviz seek <秒>
 /pianoviz speed <倍率>             # 0.25–4.0
 /pianoviz status
+```
+
+可用服务端命令：
+
+```text
+/piano list                        # 列出游戏目录 midi 文件夹中的曲目
+/piano play <文件名>                # 服务端播放可被 Replay Mod 录制的动画
+/piano stop
+/piano status
 ```
 
 文件名或路径中有空格时，可使用双引号，例如：
