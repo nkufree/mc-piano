@@ -48,7 +48,9 @@ public final class McPiano implements ModInitializer {
                             return Command.SINGLE_SUCCESS;
                         }))
                         .then(Commands.literal("reset").executes(context -> {
-                            PLAYBACK.stop();
+                            var player = context.getSource().getPlayerOrException();
+                            BlockPos origin = PianoOrigin.load().orElse(player.blockPosition());
+                            PLAYBACK.reset(player.level(), origin);
                             context.getSource().sendSuccess(() -> Component.literal("MC Piano panel reset."), false);
                             return Command.SINGLE_SUCCESS;
                         }))

@@ -44,7 +44,7 @@
 /piano list                        # 列出游戏目录 midi 文件夹中的曲目
 /piano play <文件名>                # 服务端播放可被 Replay Mod 录制的动画
 /piano stop
-/piano reset                       # 停止并清空服务端钢琴面板动画状态
+/piano reset                       # 按运行时标签扫描并清空服务端钢琴面板动画状态
 /piano status
 ```
 

@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -80,6 +81,19 @@ public final class ServerPianoPlayback {
             Arrays.fill(channelIntensity[channel], 0);
             Arrays.fill(heldChannels[channel], 0);
         }
+    }
+
+    /** Removes tagged displays even when they were created before this runtime map existed. */
+    public void reset(ServerLevel resetLevel, BlockPos resetOrigin) {
+        stop();
+        double floor = resetOrigin.getY() - 2;
+        double ceiling = resetOrigin.getY() + 2 + FALL_SPEED * PREVIEW_SECONDS;
+        AABB bounds = new AABB(resetOrigin.getX() - 3, floor, resetOrigin.getZ() - 1,
+                resetOrigin.getX() + PianoLayout.width() + 3, ceiling,
+                resetOrigin.getZ() + PianoLayout.WHITE_KEY_DEPTH + 4);
+        resetLevel.getEntities((net.minecraft.world.entity.Entity) null, bounds,
+                        entity -> entity.entityTags().contains(RUNTIME_TAG))
+                .forEach(entity -> entity.discard());
     }
 
     public void tick(MinecraftServer server) {
