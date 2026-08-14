@@ -8,7 +8,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -21,18 +20,19 @@ import java.util.stream.Collectors;
 
 /** Client controls are intentionally named /pianoviz so /piano build remains a server command. */
 public final class McPianoClient implements ClientModInitializer {
-    private static final String DEFAULT_SOUND_FONT_FILE = "steinway_concert_piano.sf2";
     private static final PlaybackEngine PLAYER = new PlaybackEngine();
     private static Path midiDirectory;
     private static Path soundFontPath;
+    private static PianoClientConfig config;
     private static MidiSong loaded;
     private static String loadedName;
 
     @Override
     public void onInitializeClient() {
-        midiDirectory = FabricLoader.getInstance().getGameDir().resolve("midi").normalize();
-        soundFontPath = FabricLoader.getInstance().getGameDir().resolve("sf2")
-                .resolve(DEFAULT_SOUND_FONT_FILE).normalize();
+        config = PianoClientConfig.load();
+        midiDirectory = config.resolveMidiDirectory();
+        soundFontPath = config.resolveSoundFont();
+        PLAYER.setWeakestVelocityPercent(config.weakestDynamics());
         // The supplied studio SoundFont is very large, so load it off the game
         // thread while the client starts.  Playback is enabled when loading ends.
         PLAYER.loadSoundFont(soundFontPath);
@@ -163,9 +163,12 @@ public final class McPianoClient implements ClientModInitializer {
 
     private static int loadSoundFont(String rawPath) {
         try {
-            Path requested = Path.of(commandPath(rawPath)).toAbsolutePath().normalize();
+            PianoClientConfig current = config();
+            current.setSoundFontPath(commandPath(rawPath));
+            Path requested = current.resolveSoundFont();
             if (!Files.isRegularFile(requested)) throw new IOException("SF2 file not found");
             soundFontPath = requested;
+            current.save();
             PLAYER.loadSoundFont(requested);
             info("Loading SF2 in the background: " + requested.getFileName());
             return Command.SINGLE_SUCCESS;
@@ -183,7 +186,26 @@ public final class McPianoClient implements ClientModInitializer {
 
     private static int setDynamics(double weakestPercent) {
         PLAYER.setWeakestVelocityPercent(weakestPercent);
+        config.setWeakestDynamics(weakestPercent);
+        try { config.save(); } catch (IOException ignored) { }
         return dynamicsStatus();
+    }
+
+    static PianoClientConfig config() {
+        if (config == null) config = PianoClientConfig.load();
+        return config;
+    }
+
+    static void saveConfig(String midiDirectoryPath, String soundFont, double weakestDynamics) throws IOException {
+        PianoClientConfig current = config();
+        current.setMidiDirectoryPath(midiDirectoryPath);
+        current.setSoundFontPath(soundFont);
+        current.setWeakestDynamics(weakestDynamics);
+        current.save();
+        midiDirectory = current.resolveMidiDirectory();
+        soundFontPath = current.resolveSoundFont();
+        PLAYER.setWeakestVelocityPercent(current.weakestDynamics());
+        PLAYER.loadSoundFont(soundFontPath);
     }
 
     /**
