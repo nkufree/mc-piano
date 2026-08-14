@@ -26,13 +26,13 @@ public final class McPianoConfigScreen extends Screen {
         PianoClientConfig config = McPianoClient.config();
         weakestDynamics = config.weakestDynamics();
         int left = width / 2 - 155;
-        addRenderableWidget(new StringWidget(left, 28, Component.literal("MC Piano client settings"), font));
-        addRenderableWidget(new StringWidget(left, 50, Component.literal("MIDI folder (relative to the game directory, or absolute):"), font));
+        addLabel(left, 28, "MC Piano client settings");
+        addLabel(left, 50, "MIDI folder (relative to the game directory, or absolute):");
         midiDirectoryField = addRenderableWidget(new EditBox(font, left, 68, 310, 20, Component.literal("MIDI folder")));
         midiDirectoryField.setMaxLength(512);
         midiDirectoryField.setValue(config.midiDirectoryPath());
 
-        addRenderableWidget(new StringWidget(left, 96, Component.literal("SoundFont path (relative to the game directory, or absolute):"), font));
+        addLabel(left, 96, "SoundFont path (relative to the game directory, or absolute):");
         soundFontField = addRenderableWidget(new EditBox(font, left, 114, 310, 20, Component.literal("SoundFont path")));
         soundFontField.setMaxLength(512);
         soundFontField.setValue(config.soundFontPath());
@@ -43,7 +43,7 @@ public final class McPianoConfigScreen extends Screen {
                 .bounds(left, 154, 64, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+ 5%"), button -> adjustDynamics(5))
                 .bounds(left + 246, 154, 64, 20).build());
-        addRenderableWidget(new StringWidget(left, 182, Component.literal("0% keeps MIDI dynamics; 100% flattens all non-zero notes."), font));
+        addLabel(left, 182, "0% keeps MIDI dynamics; 100% flattens non-zero notes.");
 
         addRenderableWidget(Button.builder(Component.literal("Restore defaults"), button -> {
                     midiDirectoryField.setValue(PianoClientConfig.DEFAULT_MIDI_DIRECTORY);
@@ -66,6 +66,13 @@ public final class McPianoConfigScreen extends Screen {
 
     private void updateDynamicsLabel() {
         dynamicsButton.setMessage(dynamicsLabel());
+    }
+
+    /** StringWidget's constructor takes width and height, so position it explicitly. */
+    private void addLabel(int x, int y, String text) {
+        StringWidget label = new StringWidget(font.width(text), font.lineHeight, Component.literal(text), font);
+        label.setPosition(x, y);
+        addRenderableWidget(label);
     }
 
     private void saveAndClose() {
