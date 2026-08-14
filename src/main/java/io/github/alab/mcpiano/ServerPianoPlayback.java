@@ -47,6 +47,7 @@ public final class ServerPianoPlayback {
     private BlockPos origin = BlockPos.ZERO;
     private VoicePalette voices = VoicePalette.empty();
     private long startedAtTick;
+    private long lastTick;
     private int eventIndex;
     private boolean sustainDown;
     private boolean playing;
@@ -61,6 +62,7 @@ public final class ServerPianoPlayback {
         origin = newOrigin;
         voices = VoicePalette.from(newSong);
         startedAtTick = currentTick;
+        lastTick = currentTick;
         eventIndex = 0;
         playing = true;
     }
@@ -82,6 +84,7 @@ public final class ServerPianoPlayback {
 
     public void tick(MinecraftServer server) {
         if (!playing || song == null || level == null) return;
+        lastTick = server.getTickCount();
         double now = now(server.getTickCount());
         while (eventIndex < song.events().size() && song.events().get(eventIndex).seconds() <= now) {
             apply(song.events().get(eventIndex++));
@@ -91,8 +94,12 @@ public final class ServerPianoPlayback {
         if (now >= song.durationSeconds() && eventIndex >= song.events().size()) stop();
     }
 
-    private double now() { return now(startedAtTick); }
-    private double now(long currentTick) { return Math.max(0, (currentTick - startedAtTick) / 20.0); }
+    private double now() { return now(lastTick); }
+    /**
+     * Begin one preview-height early so time-zero notes enter at the top of the
+     * board instead of appearing at the keyboard on the first recorded tick.
+     */
+    private double now(long currentTick) { return (currentTick - startedAtTick) / 20.0 - PREVIEW_SECONDS; }
 
     private void apply(MidiSong.TimelineEvent event) {
         int channel = event.channel();

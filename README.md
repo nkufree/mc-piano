@@ -17,7 +17,7 @@
 
 `build` 从当前位置向 X 正方向建立 88 键钢琴，键盘前方是 Z 负方向；它会自动记住钢琴原点，之后的 `/pianoviz play` 会在这架钢琴上显示下落音符与按键高亮。也可显式覆盖原点：`/pianoviz play <x> <y> <z>`。客户端控制命令用 `pianoviz` 前缀，避免和服务器的 `/piano build` 冲突。
 
-需要使用 Replay Mod 录制时，请使用服务端命令 `/piano play <文件名>`。下落音符、键盘高亮和踏板会作为真实 `BlockDisplay` 实体同步，因此会被回放记录。`/pianoviz play` 仍用于本地 SF2 声音与即时预览，不会被 Replay Mod 录制。
+需要使用 Replay Mod 录制时，请使用服务端命令 `/piano play <文件名>`。下落音符、键盘高亮和踏板会作为真实 `BlockDisplay` 实体同步，因此会被回放记录。服务端动画会先预滚动 7 秒，让开场音符从背板顶部下落到琴键；`/pianoviz play` 仍用于本地 SF2 声音与即时预览，不会被 Replay Mod 录制。
 
 可用客户端命令：
 
