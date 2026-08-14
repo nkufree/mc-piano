@@ -200,7 +200,9 @@ public final class ServerPianoPlayback {
 
         for (PianoLayout.Key key : PianoLayout.keys()) {
             float intensity = keyIntensity[key.midiNote()];
-            if (intensity <= 0) continue;
+            // Match the client preview: keyboard glass reflects a held key and
+            // must not retain a release-tail highlight after Note Off.
+            if (!isKeyHeld(key.midiNote())) continue;
             int channel = voices.strongestChannel(channelIntensity, key.midiNote());
             BlockState glow = highlightCore(key.black(), intensity, channel);
             BlockState edge = highlightEdge(key.black(), intensity, channel);

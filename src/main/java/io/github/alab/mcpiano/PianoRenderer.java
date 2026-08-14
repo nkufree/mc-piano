@@ -125,7 +125,9 @@ public final class PianoRenderer {
 
         for (PianoLayout.Key key : PianoLayout.keys()) {
             float intensity = engine.intensity(key.midiNote());
-            if (intensity <= 0) continue;
+            // The keyboard glass is an on/off key-state indicator. Unlike the
+            // falling-note glow, it must disappear as soon as Note Off arrives.
+            if (!engine.isKeyHeld(key.midiNote())) continue;
             int channel = voices.strongestChannel(engine, key.midiNote());
             BlockState glow = highlightCore(key.black(), intensity, channel, voices);
             BlockState edge = highlightEdge(key.black(), intensity, channel, voices);
