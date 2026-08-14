@@ -21,8 +21,7 @@ import java.util.stream.Collectors;
 
 /** Client controls are intentionally named /pianoviz so /piano build remains a server command. */
 public final class McPianoClient implements ClientModInitializer {
-    private static final Path DEFAULT_SOUND_FONT = Path.of(
-            "E:\\Alab\\codes\\mc_piano\\assets\\sf2\\steinway_concert_piano.sf2");
+    private static final String DEFAULT_SOUND_FONT_FILE = "steinway_concert_piano.sf2";
     private static final PlaybackEngine PLAYER = new PlaybackEngine();
     private static Path midiDirectory;
     private static Path soundFontPath;
@@ -32,7 +31,8 @@ public final class McPianoClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         midiDirectory = FabricLoader.getInstance().getGameDir().resolve("midi").normalize();
-        soundFontPath = DEFAULT_SOUND_FONT;
+        soundFontPath = FabricLoader.getInstance().getGameDir().resolve("sf2")
+                .resolve(DEFAULT_SOUND_FONT_FILE).normalize();
         // The supplied studio SoundFont is very large, so load it off the game
         // thread while the client starts.  Playback is enabled when loading ends.
         PLAYER.loadSoundFont(soundFontPath);

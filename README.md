@@ -6,7 +6,7 @@
 
 1. 将 `.mid` / `.midi` 文件复制到游戏目录的 `midi` 文件夹。例如：
    `E:\\software\\PCL2\\.minecraft\\versions\\26.2-Fabric_0.19.3\\midi`
-2. 音源默认读取 `E:\\Alab\\codes\\mc_piano\\assets\\sf2\\steinway_concert_piano.sf2`，无需复制到 Minecraft 目录。若改用其他音源，在游戏中执行 `/pianoviz soundfont <SF2绝对路径>`。
+2. 将默认音源 `steinway_concert_piano.sf2` 放入游戏目录的 `sf2` 文件夹，例如：`E:\\software\\PCL2\\.minecraft\\versions\\26.2-Fabric_0.19.3\\sf2\\steinway_concert_piano.sf2`。若改用其他音源，在游戏中执行 `/pianoviz soundfont <SF2绝对路径>`。
 3. 构建后将 `build/libs/mc-piano-0.1.0.jar` 放入同一版本目录的 `mods` 文件夹（该环境已安装 Fabric API）。
 4. 进入单人存档（需要允许命令），面对琴键正面站在钢琴左下角，执行：
 
