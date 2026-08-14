@@ -8,6 +8,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -26,6 +27,7 @@ public final class McPianoClient implements ClientModInitializer {
     private static PianoClientConfig config;
     private static MidiSong loaded;
     private static String loadedName;
+    private static Path loadedFile;
 
     @Override
     public void onInitializeClient() {
@@ -55,6 +57,10 @@ public final class McPianoClient implements ClientModInitializer {
                                 .then(ClientCommands.argument("weakest_percent", DoubleArgumentType.doubleArg(0, 100))
                                         .executes(context -> setDynamics(DoubleArgumentType.getDouble(
                                                 context, "weakest_percent")))))
+                        .then(ClientCommands.literal("export")
+                                .executes(context -> export(defaultExportPath()))
+                                .then(ClientCommands.argument("file", StringArgumentType.greedyString())
+                                        .executes(context -> export(StringArgumentType.getString(context, "file")))))
                         .then(ClientCommands.literal("play").executes(context -> playAtPlayer())
                                 .then(ClientCommands.argument("x", IntegerArgumentType.integer())
                                         .then(ClientCommands.argument("y", IntegerArgumentType.integer())
@@ -106,6 +112,7 @@ public final class McPianoClient implements ClientModInitializer {
             if (!Files.isRegularFile(candidate) || !isMidi(candidate.getFileName().toString())) throw new IOException("MIDI file not found");
             loaded = MidiParser.parse(candidate);
             loadedName = candidate.getFileName().toString();
+            loadedFile = candidate;
             info("Loaded " + loadedName + ": " + loaded.notes().size() + " notes, "
                     + String.format("%.1f", loaded.durationSeconds()) + " seconds.");
             return Command.SINGLE_SUCCESS;
@@ -189,6 +196,44 @@ public final class McPianoClient implements ClientModInitializer {
         config.setWeakestDynamics(weakestPercent);
         try { config.save(); } catch (IOException ignored) { }
         return dynamicsStatus();
+    }
+
+    private static int export(Path output) {
+        if (loaded == null || loadedFile == null) {
+            error("Load a MIDI first: /pianoviz load <file>");
+            return 0;
+        }
+        if (!Files.isRegularFile(soundFontPath)) {
+            error("SF2 file not found: " + soundFontPath);
+            return 0;
+        }
+        if (SoundFontWavExport.exportAsync(loadedFile, soundFontPath, output, PLAYER.weakestVelocityPercent(),
+                path -> Minecraft.getInstance().execute(() -> info("Exported SF2 WAV: " + path)),
+                detail -> Minecraft.getInstance().execute(() -> error("WAV export failed: " + detail)))) {
+            info("Exporting SF2 WAV in the background: " + output);
+            return Command.SINGLE_SUCCESS;
+        }
+        error("An SF2 WAV export is already running.");
+        return 0;
+    }
+
+    private static int export(String rawOutput) {
+        try {
+            return export(exportPath(rawOutput));
+        } catch (Exception exception) {
+            error("Invalid WAV export path: " + exception.getMessage());
+            return 0;
+        }
+    }
+
+    private static Path defaultExportPath() {
+        String name = loadedName == null ? "piano" : loadedName.replaceFirst("(?i)\\.(mid|midi)$", "");
+        return FabricLoader.getInstance().getGameDir().resolve("exports").resolve(name + ".wav").normalize();
+    }
+
+    private static Path exportPath(String rawPath) throws IOException {
+        Path requested = Path.of(commandPath(rawPath));
+        return (requested.isAbsolute() ? requested : FabricLoader.getInstance().getGameDir().resolve(requested)).normalize();
     }
 
     static PianoClientConfig config() {

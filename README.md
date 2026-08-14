@@ -28,6 +28,8 @@
 /pianoviz soundfont <绝对路径>      # 换用另一个 .sf2 文件
 /pianoviz dynamics                 # 查看弱音相对强音的当前百分比
 /pianoviz dynamics <0–100>         # 设置最弱力度相对最强力度的音量；中间力度平滑插值
+/pianoviz export                   # 用当前 SF2 导出至 exports/<曲名>.wav
+/pianoviz export <WAV路径>          # 导出至指定 .wav 路径（支持双引号路径）
 /pianoviz play [x y z]             # 播放 / 从开头重新播放
 /pianoviz pause
 /pianoviz resume
@@ -65,6 +67,7 @@
 - 使用 OpenJDK 开源 Gervill 合成器直接加载 SF2；Note On/Off、力度和 CC64 均送入同一 MIDI 音源，真实踏板不再由循环或拼接音效模拟。
 - 默认 Steinway SoundFont 约 34 MB，只加载其中一个钢琴预设，并在客户端后台加载；可用 `/pianoviz soundfont` 查看是否已经 Ready。
 - `/pianoviz dynamics 0` 保留 MIDI 原始强弱差异；`/pianoviz dynamics 100` 会把所有非零力度提升到同一峰值。默认 `45`，可防止极弱段完全听不见。
+- `/pianoviz export` 会在后台使用当前 SF2 和弱音动态参数离线渲染已加载的 MIDI，输出标准 44.1 kHz 立体声 WAV；导出期间不影响游戏内播放。
 - 安装 Mod Menu 后，MC Piano 条目的 Config 按钮可配置并保存 MIDI 文件夹、SF2 路径与弱音动态百分比；相对路径以游戏目录为基准，也可填绝对路径。设置保存到游戏目录的 `config/mcpiano-client.properties`，保存后会立即重新加载音源。Mod Menu 不安装也不影响 Mod 运行，仍可使用 `/pianoviz soundfont` 与 `/pianoviz dynamics` 命令。
 
 ## 构建
