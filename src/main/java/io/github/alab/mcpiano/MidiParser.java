@@ -44,7 +44,7 @@ public final class MidiParser {
         List<TimeSignature> timeSignatures = new ArrayList<>();
         tempos.add(new Tempo(0, DEFAULT_TEMPO_US_PER_QUARTER));
         timeSignatures.add(new TimeSignature(0, 4, 4));
-        for (int track = 0; track < tracks; track++) readTrack(cursor, raw, tempos, timeSignatures);
+        for (int track = 0; track < tracks; track++) readTrack(cursor, track, raw, tempos, timeSignatures);
 
         TempoMap tempoMap = new TempoMap(tempos, division);
         raw.sort(Comparator.comparingLong(RawEvent::tick).thenComparingInt(RawEvent::order));
@@ -58,7 +58,7 @@ public final class MidiParser {
             double time = tempoMap.secondsAt(event.tick);
             if (event.kind == Kind.ON) {
                 noteChannels.add(event.channel);
-                ArrayDeque<RawEvent> starts = held.computeIfAbsent(event.channel * 128 + event.note,
+                ArrayDeque<RawEvent> starts = held.computeIfAbsent(heldKey(event),
                         ignored -> new ArrayDeque<>());
                 if (!starts.isEmpty()) {
                     // Some exported piano MIDI files retrigger a key with a
@@ -75,7 +75,7 @@ public final class MidiParser {
                 events.add(new MidiSong.TimelineEvent(time, MidiSong.TimelineEvent.Type.NOTE_ON,
                         event.note, event.value, event.channel, event.value));
             } else if (event.kind == Kind.OFF) {
-                ArrayDeque<RawEvent> starts = held.get(event.channel * 128 + event.note);
+                ArrayDeque<RawEvent> starts = held.get(heldKey(event));
                 if (starts != null && !starts.isEmpty()) {
                     RawEvent start = starts.removeLast();
                     notes.add(new MidiSong.FallingNote(start.note, tempoMap.secondsAt(start.tick), time,
@@ -157,7 +157,17 @@ public final class MidiParser {
         }
     }
 
-    private static void readTrack(Cursor file, List<RawEvent> out, List<Tempo> tempos,
+    /**
+     * Standard MIDI does not attach a note identity to Note Off.  When a format-1
+     * file keeps independent voices on separate tracks but reuses one MIDI
+     * channel and pitch, the Note Off must therefore be paired inside its source
+     * track, rather than accidentally ending the other voice's falling note.
+     */
+    private static int heldKey(RawEvent event) {
+        return (event.track << 11) | (event.channel << 7) | event.note;
+    }
+
+    private static void readTrack(Cursor file, int track, List<RawEvent> out, List<Tempo> tempos,
                                   List<TimeSignature> timeSignatures) throws IOException {
         if (file.readInt() != 0x4D54726B) throw new IOException("Expected MTrk chunk");
         int length = file.readInt();
@@ -206,15 +216,15 @@ public final class MidiParser {
             int channel = status & 0x0F;
             if (data1 < 0) data1 = file.readUnsignedByte(end);
             int data2 = (command == 0xC0 || command == 0xD0) ? -1 : file.readUnsignedByte(end);
-            if (command == 0x90 && data2 > 0) out.add(new RawEvent(tick, Kind.ON, data1, data2, channel));
-            else if (command == 0x80 || (command == 0x90 && data2 == 0)) out.add(new RawEvent(tick, Kind.OFF, data1, 0, channel));
-            else if (command == 0xB0 && data1 == 64) out.add(new RawEvent(tick, Kind.SUSTAIN, 0, data2, channel));
+            if (command == 0x90 && data2 > 0) out.add(new RawEvent(tick, Kind.ON, data1, data2, channel, track));
+            else if (command == 0x80 || (command == 0x90 && data2 == 0)) out.add(new RawEvent(tick, Kind.OFF, data1, 0, channel, track));
+            else if (command == 0xB0 && data1 == 64) out.add(new RawEvent(tick, Kind.SUSTAIN, 0, data2, channel, track));
         }
         if (file.position() != end) throw new IOException("Invalid MIDI track length");
     }
 
     private enum Kind { ON, OFF, SUSTAIN }
-    private record RawEvent(long tick, Kind kind, int note, int value, int channel) {
+    private record RawEvent(long tick, Kind kind, int note, int value, int channel, int track) {
         int order() { return kind == Kind.OFF ? 0 : kind == Kind.SUSTAIN ? 1 : 2; }
     }
     private record Tempo(long tick, int microsPerQuarter) { }

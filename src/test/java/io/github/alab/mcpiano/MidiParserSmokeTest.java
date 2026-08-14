@@ -9,6 +9,7 @@ public final class MidiParserSmokeTest {
     public static void main(String[] args) throws Exception {
         autoPedalRegression();
         retriggerRegression();
+        independentTrackVoicesRegression();
         if (PianoLayout.keys().size() != 88 || PianoLayout.key(21).x() != 102
                 || PianoLayout.key(108).x() != 0) {
             throw new AssertionError("The 88-key coordinate map is invalid");
@@ -60,6 +61,32 @@ public final class MidiParserSmokeTest {
         MidiSong.FallingNote first = generated.notes().getFirst();
         if (Math.abs(first.endSeconds() - 0.5) > 0.001) {
             throw new AssertionError("Retriggered note should close at tick 480, got " + first.endSeconds());
+        }
+    }
+
+    private static void independentTrackVoicesRegression() throws Exception {
+        // Format 1: both tracks use channel 0 and C4 at the same time, but
+        // track 0 releases after one beat while track 1 holds for two.  The
+        // falling blocks must retain both independent lengths.
+        byte[] midi = {
+                'M', 'T', 'h', 'd', 0, 0, 0, 6, 0, 1, 0, 2, 1, (byte) 0xE0,
+                'M', 'T', 'r', 'k', 0, 0, 0, 13,
+                0, (byte) 0x90, 60, 64,
+                (byte) 0x83, 0x60, (byte) 0x80, 60, 0,
+                0, (byte) 0xFF, 0x2F, 0,
+                'M', 'T', 'r', 'k', 0, 0, 0, 13,
+                0, (byte) 0x90, 60, 64,
+                (byte) 0x87, 0x40, (byte) 0x80, 60, 0,
+                0, (byte) 0xFF, 0x2F, 0
+        };
+        MidiSong generated = MidiParser.parse(midi);
+        if (generated.notes().size() != 2) {
+            throw new AssertionError("Expected two independent same-pitch notes, got " + generated.notes().size());
+        }
+        double shortest = generated.notes().stream().mapToDouble(MidiSong.FallingNote::endSeconds).min().orElseThrow();
+        double longest = generated.notes().stream().mapToDouble(MidiSong.FallingNote::endSeconds).max().orElseThrow();
+        if (Math.abs(shortest - 0.5) > 0.001 || Math.abs(longest - 1.0) > 0.001) {
+            throw new AssertionError("Same-pitch track voices did not retain their distinct durations");
         }
     }
 }
