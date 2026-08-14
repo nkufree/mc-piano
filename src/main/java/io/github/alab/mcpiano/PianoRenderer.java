@@ -41,6 +41,11 @@ public final class PianoRenderer {
 
     private PianoRenderer() { }
 
+    /** Immediately removes all client-only preview entities. */
+    public static void reset() {
+        clear();
+    }
+
     public static void tick(Minecraft client, PlaybackEngine engine) {
         if (client.level == null || !engine.shouldRender()) {
             clear();

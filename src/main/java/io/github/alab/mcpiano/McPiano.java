@@ -47,6 +47,11 @@ public final class McPiano implements ModInitializer {
                             context.getSource().sendSuccess(() -> Component.literal("MC Piano server animation stopped."), false);
                             return Command.SINGLE_SUCCESS;
                         }))
+                        .then(Commands.literal("reset").executes(context -> {
+                            PLAYBACK.stop();
+                            context.getSource().sendSuccess(() -> Component.literal("MC Piano panel reset."), false);
+                            return Command.SINGLE_SUCCESS;
+                        }))
                         .then(Commands.literal("status").executes(context -> {
                             context.getSource().sendSuccess(() -> Component.literal("MC Piano server animation: "
                                     + PLAYBACK.status()), false);

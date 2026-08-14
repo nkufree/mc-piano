@@ -32,6 +32,7 @@
 /pianoviz pause
 /pianoviz resume
 /pianoviz stop
+/pianoviz reset                   # 停止本地 SF2、移除本地预览对象
 /pianoviz seek <秒>
 /pianoviz speed <倍率>             # 0.25–4.0
 /pianoviz status
@@ -43,6 +44,7 @@
 /piano list                        # 列出游戏目录 midi 文件夹中的曲目
 /piano play <文件名>                # 服务端播放可被 Replay Mod 录制的动画
 /piano stop
+/piano reset                       # 停止并清空服务端钢琴面板动画状态
 /piano status
 ```
 

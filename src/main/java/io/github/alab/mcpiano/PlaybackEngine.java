@@ -107,6 +107,12 @@ public final class PlaybackEngine {
     }
 
     public void tick(Minecraft client) {
+        // Client ticks continue on the title screen.  Do not leave Gervill's
+        // independent audio thread sounding after the player disconnects.
+        if (client.level == null || client.player == null) {
+            if (playing || paused) stop();
+            return;
+        }
         if (!playing || paused || song == null) return;
         decayReleasedKeyHighlights();
         double current = now();

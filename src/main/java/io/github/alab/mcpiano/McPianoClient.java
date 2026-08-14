@@ -66,6 +66,12 @@ public final class McPianoClient implements ClientModInitializer {
                         .then(ClientCommands.literal("pause").executes(context -> { PLAYER.pause(); info("Paused."); return Command.SINGLE_SUCCESS; }))
                         .then(ClientCommands.literal("resume").executes(context -> { PLAYER.resume(); info("Resumed."); return Command.SINGLE_SUCCESS; }))
                         .then(ClientCommands.literal("stop").executes(context -> { PLAYER.stop(); info("Stopped."); return Command.SINGLE_SUCCESS; }))
+                        .then(ClientCommands.literal("reset").executes(context -> {
+                            PLAYER.stop();
+                            PianoRenderer.reset();
+                            info("Local audio and preview reset.");
+                            return Command.SINGLE_SUCCESS;
+                        }))
                         .then(ClientCommands.literal("seek")
                                 .then(ClientCommands.argument("seconds", DoubleArgumentType.doubleArg(0))
                                         .executes(context -> seek(DoubleArgumentType.getDouble(context, "seconds")))))
